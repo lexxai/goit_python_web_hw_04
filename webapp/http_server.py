@@ -21,11 +21,19 @@ class WWWHandler(BaseHTTPRequestHandler):
     def save_data(self, data):
         filename = self.BASE_STORAGE_DIR / "data.json"
         try:
-            with open(filename, "a", encoding="utf-8") as fp:
-                fp.write(str(data))
-                fp.write("\n")
+            with open(filename, "r", encoding="utf-8") as fp:
+                loaded_data: dict = json.load(fp)
         except OSError as e:
-            print(e)
+            logger.error(e)
+      
+        loaded_data.update(data)
+        logger.debug(loaded_data)
+        if loaded_data:
+            try:
+                with open(filename, "w", encoding="utf-8") as fp:
+                    json.dump(loaded_data, fp)
+            except OSError as e:
+                logger.error(e)
 
     def get_file(self, filename, state=200):
         # print(f"{self.BASE_ROOT_DIR=}")
@@ -65,7 +73,7 @@ class WWWHandler(BaseHTTPRequestHandler):
                     result = json_data
                     self.wfile.write(result.encode())
                     logger.debug(f"{result}")
-                    self.save_data(json_data)
+                    self.save_data(data_record)
                 except Exception as e:
                      logger.error(e)
             case _:
@@ -92,9 +100,11 @@ class WWWHandler(BaseHTTPRequestHandler):
 def init_storage(storage: Path):
     if not storage.is_dir():
         logger.debug(f"init_storage : creating need folder: {storage}")
-        storage.mkdir(parents=True, exist_ok=True)
-        data_file = storage / "data.json"
-        data_file.touch(exist_ok=True)
+    storage.mkdir(parents=True, exist_ok=True)
+    data_file = storage / "data.json"
+    if not data_file.is_file():
+        with open(data_file, "w", encoding="utf-8") as fp:
+            json.dump({}, fp)
 
 
 def run(server=HTTPServer, handler=WWWHandler):
