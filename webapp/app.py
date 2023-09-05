@@ -7,10 +7,23 @@ import json
 
 class WWWHandler(BaseHTTPRequestHandler):
     BASE_ROOT_DIR = Path()
+    BASE_STORAGE_DIR = Path()
 
     @staticmethod
-    def set_root(path: Path):
+    def set_root(path: Path, storage_path: Path = None):
         WWWHandler.BASE_ROOT_DIR = path
+        if storage_path:
+            WWWHandler.BASE_STORAGE_DIR = storage_path
+
+
+    def save_data(self, data):
+        filename = self.BASE_STORAGE_DIR / "data.json"
+        try:
+            with open(filename, "a", encoding="utf-8") as fp:
+                fp.write(str(data))
+                fp.write("\n")
+        except OSError as e:
+            print(e)
 
     def get_file(self, filename, state=200):
         # print(f"{self.BASE_ROOT_DIR=}")
@@ -45,6 +58,7 @@ class WWWHandler(BaseHTTPRequestHandler):
                     result = json_data
                     self.wfile.write(result.encode())
                     print(f"{result}")
+                    self.save_data(json_data)
                 except Exception as e:
                      print(e)
             case _:
@@ -70,7 +84,7 @@ class WWWHandler(BaseHTTPRequestHandler):
 
 def run(server=HTTPServer, handler=WWWHandler):
     address = ("", 3000)
-    handler.set_root(Path("www-data/"))
+    handler.set_root(Path("www-data/"), Path("storage/"))
     http_server = server(address, handler)
     try:
         http_server.serve_forever()
