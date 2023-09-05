@@ -1,11 +1,15 @@
 from threading import Thread
-from webapp.http_server import run
+from webapp import http_server, socket_server
 import logging
 
 def run_threads():
     logger.info("run_threads")
     threads = []
-    th_http_server = Thread(name="HTTP SERVER", target=run)
+    th_socket_server = Thread(name="SOCKET SERVER", target=socket_server.run)
+    th_socket_server.start()
+    threads.append(th_socket_server)
+
+    th_http_server = Thread(name="HTTP SERVER", target=http_server.run)
     th_http_server.start()
     threads.append(th_http_server)
 
