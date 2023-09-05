@@ -3,6 +3,7 @@ from pathlib import Path
 import urllib.parse
 import mimetypes
 import json
+import logging
 
 
 class WWWHandler(BaseHTTPRequestHandler):
@@ -81,23 +82,37 @@ class WWWHandler(BaseHTTPRequestHandler):
                     filename = self.BASE_ROOT_DIR / "error.html"
                     self.get_file(filename, 404)
 
+
 def init_storage(storage: Path):
-    storage.mkdir(parents=True, exist_ok=True)
-    data_file = storage / "data.json"
-    data_file.touch(exist_ok=True)
+    if not storage.is_dir():
+        logger.debug(f"init_storage : creating need folder: {storage}")
+        storage.mkdir(parents=True, exist_ok=True)
+        data_file = storage / "data.json"
+        data_file.touch(exist_ok=True)
 
 
 def run(server=HTTPServer, handler=WWWHandler):
+    global logger
+    logger = logging.getLogger(__name__)
     address = ("", 3000)
+    www_root = Path("www-data/")
     storage = Path("storage/")
     init_storage(storage)
-    handler.set_root(Path("www-data/"), storage)
+    handler.set_root(www_root, storage)
     http_server = server(address, handler)
+    logger.info(f"Start HTTP server at port: {address[1]}")
     try:
         http_server.serve_forever()
     except KeyboardInterrupt:
         http_server.server_close()
+    except Exception as e:
+        logger.error(e)
+        http_server.server_close()
 
+logger: logging
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG, format="%(asctime)s [ %(threadName)s ] %(message)s"
+    )
     run()
