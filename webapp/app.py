@@ -1,18 +1,34 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 import urllib.parse
+import mimetypes
 
-BASE_ROOT_DIR = Path("../www-data")
+
 
 
 class WWWHandler(BaseHTTPRequestHandler):
 
+    BASE_ROOT_DIR = Path()
+
+    @staticmethod
+    def set_root(path: Path):
+        WWWHandler.BASE_ROOT_DIR = path
+
+
     def get_file(self, filename, state=200):
+        # print(f"{self.BASE_ROOT_DIR=}")
         self.send_response(state)
-        self.send_header('Content-Type', 'text/html')
+        mmtype, _ = mimetypes.guess_type(filename)
+        if mmtype:
+            self.send_header('Content-Type', mmtype)
+        else:
+            self.send_header('Content-Type', 'plain/text')
         self.end_headers()
-        with open(BASE_ROOT_DIR / filename, "rb") as fp:
-            self.wfile.write(fp.read())         
+        try:
+            with open(self.BASE_ROOT_DIR / filename, "rb") as fp:
+                self.wfile.write(fp.read())
+        except FileNotFoundError as e:
+            print(e)
 
     def do_GET(self):
         req_path = urllib.parse.urlparse(self.path).path
@@ -21,11 +37,11 @@ class WWWHandler(BaseHTTPRequestHandler):
                 filename = 'index.html'
                 self.get_file(filename)
             case _:
-                filename = BASE_ROOT_DIR / req_path[1:]
+                filename = self.BASE_ROOT_DIR / req_path[1:]
                 if  filename.exists():
                     self.get_file(filename)
                 else:
-                    filename = BASE_ROOT_DIR / 'error.html'
+                    filename = self.BASE_ROOT_DIR / 'error.html'
                     self.get_file(filename, 404)
 
 
@@ -33,6 +49,7 @@ class WWWHandler(BaseHTTPRequestHandler):
 
 def run(server=HTTPServer, handeler=WWWHandler):
     address = ('', 3000)
+    handeler.set_root(Path("../www-data"))
     http_server = server(address, handeler)
     try:
         http_server.serve_forever()
