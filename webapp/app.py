@@ -30,14 +30,15 @@ class WWWHandler(BaseHTTPRequestHandler):
         except FileNotFoundError as e:
             print(e)
 
+
     def do_GET(self):
-        req_path = urllib.parse.urlparse(self.path).path
-        match req_path:
+        route_path = urllib.parse.urlparse(self.path)
+        match route_path.path:
             case '/':
                 filename = 'index.html'
                 self.get_file(filename)
             case _:
-                filename = self.BASE_ROOT_DIR / req_path[1:]
+                filename = self.BASE_ROOT_DIR / route_path.pat[1:]
                 if  filename.exists():
                     self.get_file(filename)
                 else:
