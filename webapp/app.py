@@ -81,10 +81,17 @@ class WWWHandler(BaseHTTPRequestHandler):
                     filename = self.BASE_ROOT_DIR / "error.html"
                     self.get_file(filename, 404)
 
+def init_storage(storage: Path):
+    storage.mkdir(parents=True, exist_ok=True)
+    data_file = storage / "data.json"
+    data_file.touch(exist_ok=True)
+
 
 def run(server=HTTPServer, handler=WWWHandler):
     address = ("", 3000)
-    handler.set_root(Path("www-data/"), Path("storage/"))
+    storage = Path("storage/")
+    init_storage(storage)
+    handler.set_root(Path("www-data/"), storage)
     http_server = server(address, handler)
     try:
         http_server.serve_forever()
