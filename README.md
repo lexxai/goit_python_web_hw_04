@@ -1,5 +1,11 @@
 # goit_python_web_hw_04
 
+## RUN WEB SERVER
+
+```
+ python  webapp/app.py
+```
+
 ## INDEX
 
 ![Index](doc/app-index.png)
