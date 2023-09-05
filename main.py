@@ -20,14 +20,14 @@ def boot_http_server(name):
 def run_threads():
     logger.info("run_threads")
 
-    servers = {
+    servers_boot = {
         "HTTP_SERVER": boot_http_server,
         "SOCKET_SERVER": boot_socket_server
     }
 
     threads = {}
 
-    for name, boot_server in servers.items():
+    for name, boot_server in servers_boot.items():
         th = boot_server(name)
         threads[th.name] = th
 
@@ -37,7 +37,7 @@ def run_threads():
         for name, th in threads.items():
             if not th.is_alive():
                 logger.error(f"thread crashed, restart - {th.name}")
-                th = servers[name](name)
+                th = servers_boot[name](name)
                 threads[name] = th
         # logger.info("Sleep 2")
         time.sleep(2)
