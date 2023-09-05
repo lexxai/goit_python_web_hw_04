@@ -4,6 +4,7 @@ import urllib.parse
 import mimetypes
 import json
 import logging
+from datetime import datetime
 
 
 class WWWHandler(BaseHTTPRequestHandler):
@@ -38,8 +39,8 @@ class WWWHandler(BaseHTTPRequestHandler):
         try:
             with open(filename, "rb") as fp:
                 self.wfile.write(fp.read())
-        except FileNotFoundError as e:
-            print(e)
+        except Exception as e:
+            logger.error(e)
 
     def do_POST(self):
         route_path = urllib.parse.urlparse(self.path)
@@ -50,18 +51,23 @@ class WWWHandler(BaseHTTPRequestHandler):
                 data_parse = { 
                     key: urllib.parse.unquote_plus(val) for key, val in [ el.split("=") for el in data.split("&")]
                 }
+                timestamp = str(datetime.now())
+                data_record = {
+                    timestamp: data_parse
+                }       
+
                 try:
                     # print(data_parse)
-                    json_data = json.dumps(data_parse, ensure_ascii=False)
+                    json_data = json.dumps(data_record, ensure_ascii=False)
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json; charset=utf-8")
                     self.end_headers()
                     result = json_data
                     self.wfile.write(result.encode())
-                    print(f"{result}")
+                    logger.debug(f"{result}")
                     self.save_data(json_data)
                 except Exception as e:
-                     print(e)
+                     logger.error(e)
             case _:
                 self.send_response(301)
                 self.send_header("Location", "/error.html")

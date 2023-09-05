@@ -20,5 +20,5 @@ VOLUME $APP_HOME/storage
 
 
 # Запустимо наш застосунок всередині контейнера
-ENTRYPOINT [ "python", "webapp/app.py" ]
+ENTRYPOINT [ "python", "main.py" ]
 
