@@ -18,8 +18,11 @@ class WWWHandler(BaseHTTPRequestHandler):
             WWWHandler.BASE_STORAGE_DIR = storage_path
 
 
-    def save_data(self, data):
+    def save_data(self, data: dict):
         filename = self.BASE_STORAGE_DIR / "data.json"
+        if not data:
+            logger.error("save_data: Empty data")
+            return 1
         try:
             with open(filename, "r", encoding="utf-8") as fp:
                 loaded_data: dict = json.load(fp)
@@ -27,13 +30,14 @@ class WWWHandler(BaseHTTPRequestHandler):
             logger.error(e)
       
         loaded_data.update(data)
-        logger.debug(loaded_data)
+        # logger.debug(loaded_data)
         if loaded_data:
             try:
                 with open(filename, "w", encoding="utf-8") as fp:
-                    json.dump(loaded_data, fp)
+                    json.dump(loaded_data, fp, ensure_ascii=False, indent=4)
             except OSError as e:
                 logger.error(e)
+
 
     def get_file(self, filename, state=200):
         # print(f"{self.BASE_ROOT_DIR=}")
@@ -49,6 +53,7 @@ class WWWHandler(BaseHTTPRequestHandler):
                 self.wfile.write(fp.read())
         except Exception as e:
             logger.error(e)
+
 
     def do_POST(self):
         route_path = urllib.parse.urlparse(self.path)
