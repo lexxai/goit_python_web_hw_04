@@ -118,7 +118,7 @@ def run(server=HTTPServer, handler=WWWHandler):
     address = ("", 3000)
     www_root = Path("www-data/")
     storage = Path("storage/")
-    init_storage(storage)
+    # init_storage(storage)
     handler.set_root(www_root, storage)
     http_server = server(address, handler)
     logger.info(f"Start HTTP server at port: {address[1]}")
