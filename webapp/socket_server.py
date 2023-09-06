@@ -2,16 +2,18 @@ import logging
 import time
 from pathlib import Path
 import json
+import socket
 
 
 class DataStorage():
     BASE_STORAGE_DIR = Path()
 
-    def save_data(self, data: dict):
+    def save_data(self, data: dict) -> bool:
+        result = None
         filename = self.BASE_STORAGE_DIR / "data.json"
         if not data:
             logger.error("save_data: Empty data")
-            return 1
+            return None
         try:
             with open(filename, "r", encoding="utf-8") as fp:
                 loaded_data: dict = json.load(fp)
@@ -24,8 +26,10 @@ class DataStorage():
             try:
                 with open(filename, "w", encoding="utf-8") as fp:
                     json.dump(loaded_data, fp, ensure_ascii=False, indent=4)
+                    result = True
             except OSError as e:
                 logger.error(e)
+        return result
 
 
     def init_storage(self, storage: Path):
@@ -38,13 +42,45 @@ class DataStorage():
             with open(data_file, "w", encoding="utf-8") as fp:
                 json.dump({}, fp)
 
-def run():
+
+
+
+def run_server(ip, port, data_storage: DataStorage):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server = ip, port
+    sock.bind(server)
+    try:
+        while True:
+            data, address = sock.recvfrom(1024)
+            decoded = json.loads(data)
+            result = data_storage.save_data(decoded)
+            if result:
+                data = {"STATUS": "OK"}
+            else:
+                data = {"STATUS": "ERROR"}
+                
+            data = json.dumps(data, ensure_ascii=False)
+
+            logger.info(f'Received data: {decoded} from: {address}')
+            sock.sendto(data.encode(), address)
+            logger.info(f'Send data: {data} to: {address}')
+
+    except KeyboardInterrupt:
+        logger.info(f'Destroy server')
+    finally:
+        sock.close()
+
+
+def run(ip='127.0.0.1', port=8080):
     global logger
     logger = logging.getLogger(__name__)
     storage = Path("storage/")
     data_storage = DataStorage()
     data_storage.init_storage(storage)
     logger.info("Start Socket server")
+
+    run_server(ip, port, data_storage)
+
     time.sleep(10)
     logger.info("Stop Socket server")
 

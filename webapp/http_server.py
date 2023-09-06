@@ -5,11 +5,15 @@ import mimetypes
 import json
 import logging
 from datetime import datetime
+import socket
+
 
 
 class WWWHandler(BaseHTTPRequestHandler):
     BASE_ROOT_DIR = Path()
     BASE_STORAGE_DIR = Path()
+    UDP_IP = '127.0.0.1'
+    UDP_PORT = 8080
 
     @staticmethod
     def set_root(path: Path, storage_path: Path = None):
@@ -18,7 +22,21 @@ class WWWHandler(BaseHTTPRequestHandler):
             WWWHandler.BASE_STORAGE_DIR = storage_path
 
 
+    def run_socket_client(self, message):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server = self.UDP_IP, self.UDP_PORT
+        if message:
+            data = message.encode()
+            sock.sendto(data, server)
+            logger.info(f'Send data: {data.decode()} to server: {server}')
+            response, address = sock.recvfrom(1024)
+            logger.info(f'Response data: {response.decode()} from address: {address}')
+        sock.close()
+
+
     def save_data(self, data: dict):
+        self.run_socket_client(json.dumps(data, ensure_ascii=False))
+        return
         filename = self.BASE_STORAGE_DIR / "data.json"
         if not data:
             logger.error("save_data: Empty data")
