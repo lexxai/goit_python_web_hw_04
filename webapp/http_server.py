@@ -10,14 +10,14 @@ import socket
 
 class SocketClient():
 
-    def __init__(self, ip = '127.0.0.1', port = 3001) -> None:
+    def __init__(self, ip = socket.gethostname(), port = 3001) -> None:
         self.UDP_IP = ip
         self.UDP_PORT = port
 
     def run_socket_client(self, message: str) -> bool:
         result = False
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock = socket.socket(type=socket.SOCK_DGRAM)
             server = self.UDP_IP, self.UDP_PORT
             if message:
                 data = message.encode()
@@ -40,14 +40,11 @@ class SocketClient():
 
 class WWWHandler(BaseHTTPRequestHandler):
     BASE_ROOT_DIR = Path()
-    BASE_STORAGE_DIR = Path()
     socket_client = None
 
     @staticmethod
-    def set_root(path: Path, storage_path: Path = None, socket_client: SocketClient = None):
+    def set_root(path: Path, socket_client: SocketClient = None):
         WWWHandler.BASE_ROOT_DIR = path
-        if storage_path:
-            WWWHandler.BASE_STORAGE_DIR = storage_path
         if socket_client:
             WWWHandler.socket_client = socket_client
 
@@ -74,6 +71,23 @@ class WWWHandler(BaseHTTPRequestHandler):
         except Exception as e:
             logger.error(e)
 
+    def parse_message(self, data: str) -> bool:
+        result = None
+        data_parse = { 
+            key: urllib.parse.unquote_plus(val) for key, val in [ el.split("=") for el in data.split("&")]
+        }
+        timestamp = str(datetime.now())
+        data_record = {
+            timestamp: data_parse
+        }       
+        try:
+            json_data = json.dumps(data_record, ensure_ascii=False)
+            logger.debug(f"parse_message: {json_data}")
+            result = self.save_data(data_record)
+        except Exception as e:
+                logger.error(e)
+        return result
+
 
     def do_POST(self):
         route_path = urllib.parse.urlparse(self.path)
@@ -81,23 +95,12 @@ class WWWHandler(BaseHTTPRequestHandler):
             case "/message":
                 cont_len = int(self.headers["Content-Length"])
                 data = self.rfile.read(cont_len).decode()
-                data_parse = { 
-                    key: urllib.parse.unquote_plus(val) for key, val in [ el.split("=") for el in data.split("&")]
-                }
-                timestamp = str(datetime.now())
-                data_record = {
-                    timestamp: data_parse
-                }       
-                try:
-                    json_data = json.dumps(data_record, ensure_ascii=False)
-                    result = self.save_data(data_record)
-                    location = "/message_done.html" if result else "/error.html"
-                    self.send_response(301)
-                    self.send_header("Location", location)
-                    self.end_headers()
+                result = self.parse_message(data)
+                location = "/message_done.html" if result else "/error.html"
+                self.send_response(301)
+                self.send_header("Location", location)
+                self.end_headers()
 
-                except Exception as e:
-                     logger.error(e)
             case _:
                 self.send_response(301)
                 self.send_header("Location", "/error.html")
@@ -119,24 +122,13 @@ class WWWHandler(BaseHTTPRequestHandler):
                     self.get_file(filename, 404)
 
 
-def init_storage(storage: Path):
-    if not storage.is_dir():
-        logger.debug(f"init_storage : creating need folder: {storage}")
-    storage.mkdir(parents=True, exist_ok=True)
-    data_file = storage / "data.json"
-    if not data_file.is_file():
-        with open(data_file, "w", encoding="utf-8") as fp:
-            json.dump({}, fp)
-
-
 def run(server=HTTPServer, handler=WWWHandler):
     global logger
     logger = logging.getLogger(__name__)
     address = ("", 3000)
     www_root = Path("www-data/")
-    storage = Path("storage/")
     socket_client = SocketClient()
-    handler.set_root(www_root, storage, socket_client)
+    handler.set_root(www_root, socket_client)
     http_server = server(address, handler)
     logger.info(f"Start HTTP server at port: {address[1]}")
     try:

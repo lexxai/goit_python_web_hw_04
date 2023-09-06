@@ -1,5 +1,4 @@
 import logging
-import time
 from pathlib import Path
 import json
 import socket
@@ -50,7 +49,7 @@ class DataStorage():
 ## RUN SOCKET SERVER
 
 def run_socket_server(ip, port, data_storage: DataStorage):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = socket.socket(type=socket.SOCK_DGRAM)
     server = ip, port
     sock.bind(server)
     try:
@@ -75,7 +74,7 @@ def run_socket_server(ip, port, data_storage: DataStorage):
         sock.close()
 
 
-def run(ip='127.0.0.1', port=3001):
+def run(ip=socket.gethostname(), port=3001):
     global logger
     logger = logging.getLogger(__name__)
     storage = Path("storage/")
