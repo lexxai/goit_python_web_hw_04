@@ -8,41 +8,53 @@ from datetime import datetime
 import socket
 
 
+class SocketClient():
+
+    def __init__(self, ip = '127.0.0.1', port = 3001) -> None:
+        self.UDP_IP = ip
+        self.UDP_PORT = port
+
+    def run_socket_client(self, message: str) -> bool:
+        result = False
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            server = self.UDP_IP, self.UDP_PORT
+            if message:
+                data = message.encode()
+                sock.sendto(data, server)
+                # logger.info(f'Send data: {data.decode()} to server: {server}')
+                response, address = sock.recvfrom(1024)
+                status = json.loads(response)
+                if status.get("STATUS") == "OK":
+                    logger.info(f'SAVED OK')
+                    result = True
+                else:
+                    logger.error(f'ERROR ON SAVING')
+        except Exception as e:
+             logger.error(e)
+        finally:
+            sock.close()
+        return result
+
+
 
 class WWWHandler(BaseHTTPRequestHandler):
     BASE_ROOT_DIR = Path()
     BASE_STORAGE_DIR = Path()
-    UDP_IP = '127.0.0.1'
-    UDP_PORT = 3001
+    socket_client = None
 
     @staticmethod
-    def set_root(path: Path, storage_path: Path = None):
+    def set_root(path: Path, storage_path: Path = None, socket_client: SocketClient = None):
         WWWHandler.BASE_ROOT_DIR = path
         if storage_path:
             WWWHandler.BASE_STORAGE_DIR = storage_path
-
-
-    def run_socket_client(self, message: str) -> bool:
-        result = False
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        server = self.UDP_IP, self.UDP_PORT
-        if message:
-            data = message.encode()
-            sock.sendto(data, server)
-            # logger.info(f'Send data: {data.decode()} to server: {server}')
-            response, address = sock.recvfrom(1024)
-            status = json.loads(response)
-            if status.get("STATUS") == "OK":
-                logger.info(f'SAVED OK')
-                result = True
-            else:
-                logger.error(f'ERROR ON SAVING')
-        sock.close()
-        return result
+        if socket_client:
+            WWWHandler.socket_client = socket_client
 
 
     def save_data(self, data: dict) -> bool:
-        result = self.run_socket_client(json.dumps(data, ensure_ascii=False))
+        json_data = json.dumps(data, ensure_ascii=False)
+        result = self.socket_client.run_socket_client(json_data)
         return result
 
 
@@ -133,8 +145,8 @@ def run(server=HTTPServer, handler=WWWHandler):
     address = ("", 3000)
     www_root = Path("www-data/")
     storage = Path("storage/")
-    # init_storage(storage)
-    handler.set_root(www_root, storage)
+    socket_client = SocketClient()
+    handler.set_root(www_root, storage, socket_client)
     http_server = server(address, handler)
     logger.info(f"Start HTTP server at port: {address[1]}")
     try:
