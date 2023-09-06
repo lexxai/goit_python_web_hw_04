@@ -14,6 +14,9 @@ class DataStorage():
         if not data:
             logger.error("save_data: Empty data")
             return None
+        if not filename.is_file():
+            logger.error(f"save_data: json file is not exist - {filename}")
+            return None 
         try:
             with open(filename, "r", encoding="utf-8") as fp:
                 loaded_data: dict = json.load(fp)
@@ -58,7 +61,7 @@ def run_server(ip, port, data_storage: DataStorage):
                 data = {"STATUS": "OK"}
             else:
                 data = {"STATUS": "ERROR"}
-                
+
             data = json.dumps(data, ensure_ascii=False)
 
             logger.info(f'Received data: {decoded} from: {address}')
@@ -71,7 +74,7 @@ def run_server(ip, port, data_storage: DataStorage):
         sock.close()
 
 
-def run(ip='127.0.0.1', port=8080):
+def run(ip='127.0.0.1', port=3001):
     global logger
     logger = logging.getLogger(__name__)
     storage = Path("storage/")
@@ -81,7 +84,6 @@ def run(ip='127.0.0.1', port=8080):
 
     run_server(ip, port, data_storage)
 
-    time.sleep(10)
     logger.info("Stop Socket server")
 
 

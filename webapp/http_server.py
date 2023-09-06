@@ -13,7 +13,7 @@ class WWWHandler(BaseHTTPRequestHandler):
     BASE_ROOT_DIR = Path()
     BASE_STORAGE_DIR = Path()
     UDP_IP = '127.0.0.1'
-    UDP_PORT = 8080
+    UDP_PORT = 3001
 
     @staticmethod
     def set_root(path: Path, storage_path: Path = None):
@@ -22,7 +22,8 @@ class WWWHandler(BaseHTTPRequestHandler):
             WWWHandler.BASE_STORAGE_DIR = storage_path
 
 
-    def run_socket_client(self, message):
+    def run_socket_client(self, message: str) -> bool:
+        result = False
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server = self.UDP_IP, self.UDP_PORT
         if message:
@@ -33,13 +34,16 @@ class WWWHandler(BaseHTTPRequestHandler):
             status = json.loads(response)
             if status.get("STATUS") == "OK":
                 logger.info(f'SAVED OK')
+                result = True
             else:
                 logger.error(f'ERROR ON SAVING')
         sock.close()
+        return result
 
 
-    def save_data(self, data: dict):
-        self.run_socket_client(json.dumps(data, ensure_ascii=False))
+    def save_data(self, data: dict) -> bool:
+        result = self.run_socket_client(json.dumps(data, ensure_ascii=False))
+        return result
 
 
 
@@ -76,13 +80,20 @@ class WWWHandler(BaseHTTPRequestHandler):
                 try:
                     # print(data_parse)
                     json_data = json.dumps(data_record, ensure_ascii=False)
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    # self.send_response(200)
+                    # self.send_header("Content-Type", "application/json; charset=utf-8")
+                    # self.end_headers()
+                    # result = json_data
+                    # self.wfile.write(result.encode())
+                    #logger.debug(f"{result}")
+
+                    result = self.save_data(data_record)
+
+                    location = "/message_done.html" if result else "/error.html"
+                    self.send_response(301)
+                    self.send_header("Location", location)
                     self.end_headers()
-                    result = json_data
-                    self.wfile.write(result.encode())
-                    logger.debug(f"{result}")
-                    self.save_data(data_record)
+
                 except Exception as e:
                      logger.error(e)
             case _:

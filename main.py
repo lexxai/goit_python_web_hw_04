@@ -45,7 +45,7 @@ def run_threads():
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.DEBUG, format="%(asctime)s [ %(threadName)s ] %(message)s"
+        level=logging.DEBUG, format="%(asctime)s [ %(threadName)s ] < %(filename)s:%(lineno)d > %(message)s"
     )
     logger = logging.getLogger(__name__)
     run_threads()
