@@ -8,3 +8,4 @@ tests/
 doc/
 scripts/
 *.zip
+storage/data.json
