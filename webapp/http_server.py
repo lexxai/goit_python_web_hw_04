@@ -28,33 +28,19 @@ class WWWHandler(BaseHTTPRequestHandler):
         if message:
             data = message.encode()
             sock.sendto(data, server)
-            logger.info(f'Send data: {data.decode()} to server: {server}')
+            # logger.info(f'Send data: {data.decode()} to server: {server}')
             response, address = sock.recvfrom(1024)
-            logger.info(f'Response data: {response.decode()} from address: {address}')
+            status = json.loads(response)
+            if status.get("STATUS") == "OK":
+                logger.info(f'SAVED OK')
+            else:
+                logger.error(f'ERROR ON SAVING')
         sock.close()
 
 
     def save_data(self, data: dict):
         self.run_socket_client(json.dumps(data, ensure_ascii=False))
-        return
-        filename = self.BASE_STORAGE_DIR / "data.json"
-        if not data:
-            logger.error("save_data: Empty data")
-            return 1
-        try:
-            with open(filename, "r", encoding="utf-8") as fp:
-                loaded_data: dict = json.load(fp)
-        except OSError as e:
-            logger.error(e)
-      
-        loaded_data.update(data)
-        # logger.debug(loaded_data)
-        if loaded_data:
-            try:
-                with open(filename, "w", encoding="utf-8") as fp:
-                    json.dump(loaded_data, fp, ensure_ascii=False, indent=4)
-            except OSError as e:
-                logger.error(e)
+
 
 
     def get_file(self, filename, state=200):
