@@ -7,10 +7,11 @@ import socket
 
 class DataStorage():
     BASE_STORAGE_DIR = Path()
+    STORAGE_FILE = "data.json"
 
     def save_data(self, data: dict) -> bool:
         result = None
-        filename = self.BASE_STORAGE_DIR / "data.json"
+        filename = self.BASE_STORAGE_DIR / self.STORAGE_FILE
         if not data:
             logger.error("save_data: Empty data")
             return None
@@ -46,9 +47,9 @@ class DataStorage():
                 json.dump({}, fp)
 
 
+## RUN SOCKET SERVER
 
-
-def run_server(ip, port, data_storage: DataStorage):
+def run_socket_server(ip, port, data_storage: DataStorage):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server = ip, port
     sock.bind(server)
@@ -82,7 +83,7 @@ def run(ip='127.0.0.1', port=3001):
     data_storage.init_storage(storage)
     logger.info("Start Socket server")
 
-    run_server(ip, port, data_storage)
+    run_socket_server(ip, port, data_storage)
 
     logger.info("Stop Socket server")
 
