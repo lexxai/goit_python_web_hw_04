@@ -17,11 +17,6 @@
 ![Index](doc/app-message.png)
 
  
-### MESSAGE POST
-
-![Index](doc/app-message-post.png)
-
-
 ## SOCKET SAVE STORAGE JSON 
 
 ### RUN SREVERS in Threads with WATHCDOG timer
@@ -70,6 +65,9 @@ python main.py
 
 ![Index](doc/storage-json.png)
 
+### RESULT MESSAGES SENT
+
+![Index](doc/app-message-done.png)
 
 ## DOCKER
 
