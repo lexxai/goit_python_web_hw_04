@@ -88,19 +88,9 @@ class WWWHandler(BaseHTTPRequestHandler):
                 data_record = {
                     timestamp: data_parse
                 }       
-
                 try:
-                    # print(data_parse)
                     json_data = json.dumps(data_record, ensure_ascii=False)
-                    # self.send_response(200)
-                    # self.send_header("Content-Type", "application/json; charset=utf-8")
-                    # self.end_headers()
-                    # result = json_data
-                    # self.wfile.write(result.encode())
-                    #logger.debug(f"{result}")
-
                     result = self.save_data(data_record)
-
                     location = "/message_done.html" if result else "/error.html"
                     self.send_response(301)
                     self.send_header("Location", location)
