@@ -75,7 +75,6 @@ def run_socket_server(ip, port, data_storage: DataStorage):
     try:
         while True:
             data, address = sock.recvfrom(1024)
-            # decoded = json.loads(data)
             decoded = data.decode()
             result = data_storage.save_data(decoded)
             if result:
@@ -85,9 +84,9 @@ def run_socket_server(ip, port, data_storage: DataStorage):
 
             data = json.dumps(data, ensure_ascii=False)
 
-            logger.info(f'Received data: {decoded} from: {address}')
+            logger.debug(f'Received data: {decoded} from: {address}')
             sock.sendto(data.encode(), address)
-            logger.info(f'Send data: {data} to: {address}')
+            logger.debug(f'Send data: {data} to: {address}')
 
     except KeyboardInterrupt:
         logger.info(f'Destroy server')
@@ -101,11 +100,11 @@ def run(ip=socket.gethostname(), port=3001):
     storage = Path("storage/")
     data_storage = DataStorage()
     data_storage.init_storage(storage)
-    logger.info("Start Socket server")
+    logger.debug("Start Socket server")
 
     run_socket_server(ip, port, data_storage)
 
-    logger.info("Stop Socket server")
+    logger.error("Stop Socket server")
 
 
 logger: logging

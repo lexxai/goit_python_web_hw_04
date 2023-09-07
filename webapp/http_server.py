@@ -48,13 +48,9 @@ class WWWHandler(BaseHTTPRequestHandler):
         if socket_client:
             WWWHandler.socket_client = socket_client
 
-
     def save_data(self, data) -> bool:
-        # json_data = json.dumps(data, ensure_ascii=False)
         result = self.socket_client.run_socket_client(data)
         return result
-
-
 
     def get_file(self, filename, state=200):
         # print(f"{self.BASE_ROOT_DIR=}")
@@ -71,30 +67,12 @@ class WWWHandler(BaseHTTPRequestHandler):
         except Exception as e:
             logger.error(e)
 
-    def parse_message(self, data: str) -> bool:
-        result = None
-        data_parse = { 
-            key: urllib.parse.unquote_plus(val) for key, val in [ el.split("=") for el in data.split("&")]
-        }
-        timestamp = str(datetime.now())
-        data_record = {
-            timestamp: data_parse
-        }       
-        try:
-            json_data = json.dumps(data_record, ensure_ascii=False)
-            logger.debug(f"parse_message: {json_data}")
-            result = self.save_data(data_record)
-        except Exception as e:
-                logger.error(e)
-        return result
-
     def do_POST(self):
         route_path = urllib.parse.urlparse(self.path)
         match route_path.path:
             case "/message":
                 cont_len = int(self.headers["Content-Length"])
                 data = self.rfile.read(cont_len)
-                # result = self.parse_message(data)
                 result = self.save_data(data)
                 location = "/message_done.html" if result else "/error.html"
                 self.send_response(301)
