@@ -19,12 +19,6 @@ class DataStorage():
         result = {
             timestamp: data_parse
         }       
-        # try:
-        #     json_data = json.dumps(data_record, ensure_ascii=False)
-        #     logger.debug(f"parse_message: {json_data}")
-        #     result = self.save_data(data_record)
-        # except Exception as e:
-        #         logger.error(e)
         return result
 
     def save_data(self, data_mgs: str) -> bool:
@@ -82,7 +76,7 @@ def run_socket_server(ip, port, data_storage: DataStorage):
             else:
                 data = {"STATUS": "ERROR"}
 
-            data = json.dumps(data, ensure_ascii=False)
+            data = json.dumps(data)
 
             logger.debug(f'Received data: {decoded} from: {address}')
             sock.sendto(data.encode(), address)
