@@ -2,14 +2,34 @@ import logging
 from pathlib import Path
 import json
 import socket
+import urllib.parse
+from datetime import datetime
 
 
 class DataStorage():
     BASE_STORAGE_DIR = Path()
     STORAGE_FILE = "data.json"
 
-    def save_data(self, data: dict) -> bool:
+    def parse_message(self, data: str) -> bool:
         result = None
+        data_parse = { 
+            key: urllib.parse.unquote_plus(val) for key, val in [ el.split("=") for el in data.split("&")]
+        }
+        timestamp = str(datetime.now())
+        result = {
+            timestamp: data_parse
+        }       
+        # try:
+        #     json_data = json.dumps(data_record, ensure_ascii=False)
+        #     logger.debug(f"parse_message: {json_data}")
+        #     result = self.save_data(data_record)
+        # except Exception as e:
+        #         logger.error(e)
+        return result
+
+    def save_data(self, data_mgs: str) -> bool:
+        result = None
+        data = self.parse_message(data_mgs)
         filename = self.BASE_STORAGE_DIR / self.STORAGE_FILE
         if not data:
             logger.error("save_data: Empty data")
@@ -55,7 +75,8 @@ def run_socket_server(ip, port, data_storage: DataStorage):
     try:
         while True:
             data, address = sock.recvfrom(1024)
-            decoded = json.loads(data)
+            # decoded = json.loads(data)
+            decoded = data.decode()
             result = data_storage.save_data(decoded)
             if result:
                 data = {"STATUS": "OK"}

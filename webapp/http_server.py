@@ -14,13 +14,13 @@ class SocketClient():
         self.UDP_IP = ip
         self.UDP_PORT = port
 
-    def run_socket_client(self, message: str) -> bool:
+    def run_socket_client(self, message) -> bool:
         result = False
         try:
             sock = socket.socket(type=socket.SOCK_DGRAM)
             server = self.UDP_IP, self.UDP_PORT
             if message:
-                data = message.encode()
+                data = message
                 sock.sendto(data, server)
                 # logger.info(f'Send data: {data.decode()} to server: {server}')
                 response, address = sock.recvfrom(1024)
@@ -49,9 +49,9 @@ class WWWHandler(BaseHTTPRequestHandler):
             WWWHandler.socket_client = socket_client
 
 
-    def save_data(self, data: dict) -> bool:
-        json_data = json.dumps(data, ensure_ascii=False)
-        result = self.socket_client.run_socket_client(json_data)
+    def save_data(self, data) -> bool:
+        # json_data = json.dumps(data, ensure_ascii=False)
+        result = self.socket_client.run_socket_client(data)
         return result
 
 
@@ -88,14 +88,14 @@ class WWWHandler(BaseHTTPRequestHandler):
                 logger.error(e)
         return result
 
-
     def do_POST(self):
         route_path = urllib.parse.urlparse(self.path)
         match route_path.path:
             case "/message":
                 cont_len = int(self.headers["Content-Length"])
-                data = self.rfile.read(cont_len).decode()
-                result = self.parse_message(data)
+                data = self.rfile.read(cont_len)
+                # result = self.parse_message(data)
+                result = self.save_data(data)
                 location = "/message_done.html" if result else "/error.html"
                 self.send_response(301)
                 self.send_header("Location", location)
@@ -105,7 +105,6 @@ class WWWHandler(BaseHTTPRequestHandler):
                 self.send_response(301)
                 self.send_header("Location", "/error.html")
                 self.end_headers()
-
 
     def do_GET(self):
         route_path = urllib.parse.urlparse(self.path)
